@@ -1,0 +1,94 @@
+import React, { useEffect } from "react";
+import NavBar from "./NavMenu"
+import FooterMain from "./FooterMain";
+
+const AboutPage = () => {
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  },[])
+  
+  return (
+    <div>
+      <NavBar />
+      <div className="bg-gradient-to-br from-white to-gray-100 py-16 px-8">
+        <div className="max-w-7xl mx-auto space-y-16">
+          {/* Header Section */}
+          <div className="relative text-center">
+            <div className="absolute -top-10 -left-10 w-32 h-32 bg-[#FFD166] rounded-full opacity-20 blur-xl"></div>
+            <div className="absolute top-0 -right-10 w-24 h-24 bg-blue-400 rounded-full opacity-30 blur-lg"></div>
+            <h2 className="text-6xl font-extrabold font-poppins text-gray-900">
+              About <span className="text-yellow-500">NutriSacn&reg;</span>
+            </h2>
+            <p className="text-lg font-poppins text-gray-600 mt-4 max-w-3xl mx-auto">
+              Blending timeless wisdom with modern technology to create a transformative platform for personal growth.
+            </p>
+          </div>
+
+          {/* Mission and Vision Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div className="p-8 bg-white shadow-2xl rounded-2xl relative group transform hover:-translate-y-3 transition duration-300">
+              <div className="absolute -top-6 -left-6 w-16 h-16 bg-gradient-to-tr from-[#FFD166] to-red-400 rounded-full opacity-20 blur-md group-hover:blur-lg"></div>
+              <h3 className="text-4xl font-poppins font-semibold text-gray-800 mb-4">Our Mission</h3>
+              <p className="text-gray-600 font-poppins leading-relaxed">
+                Empower individuals with AI-powered food recognition and nutritional analysis to make informed dietary decisions and achieve their health goals.
+              </p>
+            </div>
+            <div className="p-8 bg-white shadow-2xl rounded-2xl relative group transform hover:-translate-y-3 transition duration-300">
+              <div className="absolute -top-6 -left-6 w-16 h-16 bg-gradient-to-tr from-green-400 to-blue-400 rounded-full opacity-20 blur-md group-hover:blur-lg"></div>
+              <h3 className="text-4xl font-semibold font-poppins text-gray-800 mb-4">Our Vision</h3>
+              <p className="text-gray-600 font-poppins leading-relaxed">
+                 Revolutionize dietary tracking through automated food recognition technology, making nutritional awareness accessible to everyone regardless of their technical or nutritional expertise.
+              </p>
+            </div>
+          </div>
+
+          {/* Why Us Section */}
+          <div className="text-center space-y-12">
+            <h3 className="text-5xl font-poppins text-gray-900">
+              Why Choose <span className="text-[#06D6A0] font-bold font-poppins">NutriScan&reg;</span>?
+            </h3>
+           
+            <div className="font-poppins grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+              {[
+                {
+                  title: "Ml-Powered Food Recognition",
+                  text: "Instant food identification from images.",
+                  bg: "from-yellow-400 to-orange-500",
+                },
+                {
+                  title: "Automated Nutrition Analysis ",
+                  text: "Real-time calorie and macronutrient calculation.",
+                  bg: "from-green-400 to-teal-500",
+                },
+                {
+                  title: "Smart Habit Tracking",
+                  text: "Dietary and lifestyle habit monitoring with AI insights.",
+                  bg: "from-blue-400 to-purple-500",
+                },
+                {
+                  title: "Interactive Dashboard",
+                  text: " Comprehensive progress visualization and analytics.",
+                  bg: "from-pink-400 to-red-500",
+                },
+              ].map((item, index) => (
+                <div
+                  key={index}
+                  className={`p-6 bg-gradient-to-br ${item.bg} text-white font-poppins rounded-2xl shadow-lg hover:scale-105 transform transition duration-300`}
+                >
+                  <h4 className="text-2xl font-bold mb-2">{item.title}</h4>
+                  <p>{item.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      <FooterMain />
+    </div>
+
+  );
+};
+
+export default AboutPage;
+
