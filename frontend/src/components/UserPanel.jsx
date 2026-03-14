@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Settings, LogOut, Activity, Calendar, Target, TrendingUp, Award } from 'lucide-react';
 import axios from 'axios';
+import { API_BASE } from '../api';
 
 const UserPanel = () => {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ const UserPanel = () => {
       const email = localStorage.getItem('userEmail');
       if (email) {
         try {
-          const response = await axios.get(`http://localhost:3000/user-profile?email=${email}`);
+          const response = await axios.get(`${API_BASE}/user-profile?email=${email}`);
           const user = response.data;
 
           const history = user.predictionHistory || [];

@@ -1,6 +1,7 @@
 // OnboardingForm.jsx
 import  { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE } from "../api";
 
 const OnboardingForm = () => {
   const [step, setStep] = useState(1);
@@ -44,13 +45,20 @@ const OnboardingForm = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:3000/profile", {
+      const email = localStorage.getItem("userEmail");
+
+      if (!email) {
+        console.error("No user email found in localStorage. User may not be logged in.");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/profile`, {
         method: "POST",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ email, ...formData }),
       });
 
       if (response.ok) {

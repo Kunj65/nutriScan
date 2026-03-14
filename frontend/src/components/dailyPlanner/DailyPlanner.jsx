@@ -7,6 +7,7 @@ import remarkGfm from "remark-gfm"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import { useTheme } from "next-themes"
 import { Sun, Moon } from "lucide-react"
+import { API_BASE } from "../../api"
 
 
 
@@ -39,8 +40,7 @@ export default function ChatPage() {
 
 
 
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5001";
-    const res = await fetch(`${BACKEND_URL}/dailyAI`, {
+    const res = await fetch(`${API_BASE}/dailyAI`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

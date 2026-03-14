@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
 import PredictSearch from "./PredictSearch"; // Import your PredictSearch component
+import { API_BASE } from "../../api";
 
 const HabitRecommendations = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -30,7 +31,7 @@ const HabitRecommendations = () => {
     setError("");
 
     try {
-      const response = await axios.post("http://localhost:3000/predict-habits", {
+      const response = await axios.post(`${API_BASE}/predict-habits`, {
         query: searchQuery,
       });
 

@@ -12,7 +12,7 @@ const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, ".env") });
 
 const app = express();
-const port = 5001;
+const port = process.env.PORT || 5001;
 
 // ===============================
 // MODELS
@@ -43,20 +43,28 @@ mongoose
   .catch((err) => console.error("MongoDB connection error:", err));
 
 // ===============================
-// SEED ADMIN USER
+// SEED ADMIN USER (OPTIONAL)
 // ===============================
-const seedAdmin = async () => {
-  try {
-    const adminEmail = "admin123@gmail.com";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
-    const adminExists = await User.findOne({ email: adminEmail });
+const seedAdmin = async () => {
+  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+    console.log(
+      "Skipping admin seed. Set ADMIN_EMAIL and ADMIN_PASSWORD in .env to enable."
+    );
+    return;
+  }
+
+  try {
+    const adminExists = await User.findOne({ email: ADMIN_EMAIL });
 
     if (!adminExists) {
-      const hashedPassword = await bcrypt.hash("admin@123", 10);
+      const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
 
       const adminUser = new User({
         name: "Admin",
-        email: adminEmail,
+        email: ADMIN_EMAIL,
         password: hashedPassword,
         role: "admin",
       });
@@ -77,13 +85,15 @@ const seedAdmin = async () => {
 const openaiApiKey =
   process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
 
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+
 let openai;
 
 function getOpenAIClient() {
   if (!openaiApiKey) {
-    console.log("no api key found")
-    return null
-  };
+    console.log("no api key found");
+    return null;
+  }
 
   if (openai) return openai;
 
@@ -91,7 +101,7 @@ function getOpenAIClient() {
     apiKey: openaiApiKey,
     baseURL: "https://openrouter.ai/api/v1",
     defaultHeaders: {
-      "HTTP-Referer": "http://localhost:5173",
+      "HTTP-Referer": FRONTEND_URL,
       "X-Title": "NutriScan",
     },
   });
@@ -256,24 +266,31 @@ app.post("/dailyAI", async (req, res) => {
 // AUTH ROUTES
 // ===============================
 
-// SIGNUP
+const safeUser = (user) => {
+  if (!user) return null;
+  const { password, __v, ...rest } = user.toObject ? user.toObject() : user;
+  return rest;
+};
+
 app.post("/signup", async (req, res) => {
   const { name, email, password } = req.body;
 
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: "Name, email, and password are required" });
+  }
+
   try {
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
 
     if (existingUser) {
-      return res.status(409).json({
-        message: "Email already exists",
-      });
+      return res.status(409).json({ error: "Email already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = new User({
       name,
-      email,
+      email: email.toLowerCase(),
       password: hashedPassword,
     });
 
@@ -281,83 +298,109 @@ app.post("/signup", async (req, res) => {
 
     res.status(201).json({
       message: "Signup successful",
-      user,
+      user: safeUser(user),
     });
   } catch (err) {
+    console.error("Signup error:", err);
     res.status(500).json({ error: "Signup failed" });
   }
 });
 
-// LOGIN
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required" });
+  }
+
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
-      return res.status(401).json({ error: "Invalid email" });
+      return res.status(401).json({ error: "Invalid email or password" });
     }
 
     const valid = await bcrypt.compare(password, user.password);
 
     if (!valid) {
-      return res.status(401).json({ error: "Invalid password" });
+      return res.status(401).json({ error: "Invalid email or password" });
     }
 
     res.json({
       message: "Login successful",
-      user,
+      user: safeUser(user),
     });
   } catch (err) {
+    console.error("Login error:", err);
     res.status(500).json({ error: "Login failed" });
   }
 });
 
-// FORGOT PASSWORD
 app.post("/forgot-password", async (req, res) => {
   const { email, password, confirm_password } = req.body;
 
+  if (!email || !password || !confirm_password) {
+    return res.status(400).json({ error: "Email and both password fields are required" });
+  }
+
+  if (password !== confirm_password) {
+    return res.status(400).json({ error: "Passwords do not match" });
+  }
+
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
-    }
-
-    if (password !== confirm_password) {
-      return res.status(400).json({
-        message: "Passwords do not match",
-      });
+      return res.status(404).json({ error: "User not found" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     user.password = hashedPassword;
-
     await user.save();
 
-    res.json({
-      message: "Password updated",
-    });
+    res.json({ message: "Password updated" });
   } catch (err) {
+    console.error("Forgot password error:", err);
     res.status(500).json({ error: "Password reset failed" });
   }
 });
 
 // ===============================
-// USERS
+// USER PROFILE
 // ===============================
 
-app.get("/users", async (req, res) => {
-  try {
-    const users = await User.find({}, "-password");
+app.post("/profile", async (req, res) => {
+  const { email, weight, height, age, workingHours, profession, interests, problems } = req.body;
 
-    res.json(users);
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+
+  try {
+    const updates = {};
+
+    if (weight !== undefined) updates.weight = weight;
+    if (height !== undefined) updates.height = height;
+    if (age !== undefined) updates.age = age;
+    if (workingHours !== undefined) updates.workingHours = workingHours;
+    if (profession !== undefined) updates.profession = profession;
+    if (interests !== undefined) updates.interests = interests;
+    if (problems !== undefined) updates.problems = problems;
+
+    const user = await User.findOneAndUpdate(
+      { email: email.toLowerCase() },
+      { $set: updates },
+      { new: true, projection: "-password" }
+    );
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(user);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch users" });
+    console.error("Profile update error:", err);
+    res.status(500).json({ error: "Failed to update profile" });
   }
 });
 
@@ -368,145 +411,23 @@ app.get("/users", async (req, res) => {
 app.get("/", (req, res) => {
   res.send("NutriScan Backend Running 🚀");
 });
-// express server
-
-
-// fetching the data from database
-const totalCount = async () => {
-  try {
-    const totalCount = await User.countDocuments();
-    return totalCount;
-  } catch (err) {
-    console.error("Error counting total documents in database!: ", err)
-  }
-}
-
-const fetchUser = async (doc_num) => {
-  try {
-    const users = await User.find(); // Fetch all users
-    return (users[doc_num].email);
-  } catch (err) {
-    console.error('Error fetching users:', err);
-  }
-}
-
-const findUser = async (email) => {
-
-  try {
-    const count = await totalCount()
-
-    for (let i = 0; i < count; i++) {
-      if (email == await fetchUser(i)) {
-        return email
-      }
-    }
-    return 1;
-  } catch (err) {
-    console.error("Getting an error: ", err)
-  }
-}
-
-// Signup Route
-app.post("/signup", async (req, res) => {
-
-  const { name, email, password } = req.body;
-
-  try {
-
-    const DBuser = await findUser(email)
-    if (DBuser != 1) {
-      res.status(409).json({ message: "Email id already exist!" });
-    }
-    else {
-      const hashedPassword = await bcrypt.hash(password, 10); // hashing the password
-
-      const newUser = new User({ name, email, password: hashedPassword });
-
-      await newUser.save()
-      res.status(201).json({ message: "User saved successfully!", user: newUser });
-    }
-
-  } catch (error) {
-    res.status(500).json({ message: "An error occurred while saving the user." });
-  }
-})
-
-
-// Login route
-app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-
-  const DBuser = await findUser(email);
-  const databasePassword = await User.findOne({ email: DBuser }, 'password');
-  console.log(databasePassword)
-
-  try {
-    if (DBuser == 1) {
-      console.log("Please enter a valid email id")
-      res.status(401).json({ error: "Invalid email" });
-    } else {
-
-      if (email === DBuser && bcrypt.compareSync(password, databasePassword.password)) {
-        const user = await User.findOne({ email: email });
-        res.status(200).json({ message: "Login successful!", role: user.role, user: user });
-      } else {
-        res.status(401).json({ error: "Invalid email or password!" })
-      }
-    }
-  } catch (error) {
-    res.status(500).json({ message: "An error occurred while Login" });
-  }
-
-})
-
-// Change Password
-const changePassword = async (email, new_password) => {
-  const hashedNewPassword = await bcrypt.hash(new_password, 10); // hashing the password
-  const filter = { email: email }
-  await User.updateOne(filter, { $set: { password: hashedNewPassword } })
-}
-
-// Forgot Password
-app.post("/forgot-password", async (req, res) => {
-  const { email, password, confirm_password } = req.body;
-
-  try {
-    const DBuser = await findUser(email)
-
-    if (DBuser == 1) {
-      res.status(409).json({ message: "User is not exist!" });
-    } else {
-      if (password == confirm_password) {
-        const new_password = password
-        changePassword(email, new_password)
-        res.status(200).json({ message: "Password Change Successfully!" });
-      } else {
-        res.status(200).json({ message: "Both passwords are not same. Please Recheck!" });
-      }
-    }
-  } catch (error) {
-    res.status(500).json({ message: "An error occurred while changing the Password!" });
-  }
-
-})
 
 // Delete Account
 app.delete("/delete-account", async (req, res) => {
   const { email } = req.body;
-  console.log("Delete account request received for email:", email);
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
 
   try {
-    const DBuser = await findUser(email);
-    console.log("DBuser result:", DBuser);
-
-    if (DBuser == 1) {
-      console.log("User not found");
-      res.status(404).json({ message: "User not found!" });
-    } else {
-      const deleteResult = await User.deleteOne({ email: email });
-      console.log("Delete result:", deleteResult);
-      res.status(200).json({ message: "Account deleted successfully!" });
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ message: "User not found!" });
     }
+
+    await User.deleteOne({ email: email.toLowerCase() });
+    res.status(200).json({ message: "Account deleted successfully!" });
   } catch (error) {
     console.error("Error deleting account:", error);
     res.status(500).json({ message: "An error occurred while deleting the account." });
@@ -516,14 +437,20 @@ app.delete("/delete-account", async (req, res) => {
 // Get User Profile
 app.get("/user-profile", async (req, res) => {
   const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
   try {
-    const user = await User.findOne({ email: email }, '-password');
+    const user = await User.findOne({ email: email.toLowerCase() }, "-password");
     if (user) {
       res.status(200).json(user);
     } else {
       res.status(404).json({ message: "User not found" });
     }
   } catch (error) {
+    console.error("Error fetching user profile:", error);
     res.status(500).json({ message: "Error fetching user profile" });
   }
 });
@@ -531,9 +458,10 @@ app.get("/user-profile", async (req, res) => {
 // Get all users (for Admin Panel)
 app.get("/users", async (req, res) => {
   try {
-    const users = await User.find({}, '-password'); // Exclude password
+    const users = await User.find({}, "-password");
     res.status(200).json(users);
   } catch (error) {
+    console.error("Error fetching users:", error);
     res.status(500).json({ message: "Error fetching users" });
   }
 });
@@ -541,6 +469,10 @@ app.get("/users", async (req, res) => {
 // Predict Habits using AI
 app.post("/predict-habits", async (req, res) => {
   const { query } = req.body;
+
+  if (typeof model === 'undefined') {
+    return res.status(501).json({ message: "Habit prediction model is not configured" });
+  }
 
   try {
     if (!query || query.trim() === "") {

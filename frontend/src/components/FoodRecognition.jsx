@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Upload, Camera, Loader2, AlertCircle, Info, TrendingUp, Apple } from 'lucide-react';
 import Navbar from './NavMenu';
 import Footer from './FooterMain';
+
 const FoodRecognition = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -10,9 +11,10 @@ const FoodRecognition = () => {
   const [error, setError] = useState(null);
   const [dragActive, setDragActive] = useState(false);
 
-  
   const fileInputRef = useRef(null);
-  const API_URL ='http://localhost:5000';
+  const API_URL =
+    
+    'http://localhost:5000';
 
   const handleDrag = (e) => {
     e.preventDefault();

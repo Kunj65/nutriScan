@@ -98,7 +98,7 @@ Large ML model files (optional)
 
 -----------------------------
 
-*.h5
+
 *.pt
 *.pth
 *.onnx

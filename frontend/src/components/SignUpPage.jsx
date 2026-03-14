@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { API_BASE } from "../api";
 
 const SignUpPage = () => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const SignUpPage = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:3000/signup", {
+      const response = await fetch(`${API_BASE}/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

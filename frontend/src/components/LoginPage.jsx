@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { API_BASE } from "../api";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -20,7 +21,7 @@ const LoginPage = () => {
     e.preventDefault(); // Prevent page reload
 
     try {
-      const response = await fetch("http://localhost:3000/login", {
+      const response = await fetch(`${API_BASE}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

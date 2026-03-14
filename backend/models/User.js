@@ -5,6 +5,13 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, default: 'user' },
+  weight: { type: Number },
+  height: { type: Number },
+  age: { type: Number },
+  workingHours: { type: Number },
+  profession: { type: String },
+  interests: [{ type: String }],
+  problems: [{ type: String }],
   predictionHistory: [{
     date: { type: Date, default: Date.now },
     prediction: String,

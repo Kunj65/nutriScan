@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE } from '../api';
 
 const AdminPanel = () => {
     const [users, setUsers] = useState([]);
@@ -10,7 +11,7 @@ const AdminPanel = () => {
 
     const fetchUsers = async () => {
         try {
-            const response = await axios.get('http://localhost:3000/users');
+            const response = await axios.get(`${API_BASE}/users`);
             setUsers(response.data);
         } catch (error) {
             console.error('Error fetching users:', error);
@@ -49,7 +50,7 @@ const AdminPanel = () => {
         if (confirmed) {
             setDeletingUserId(userId);
             try {
-                const response = await axios.delete('http://localhost:3000/delete-account', {
+                const response = await axios.delete(`${API_BASE}/delete-account`, {
                     data: { email: email }
                 });
 
